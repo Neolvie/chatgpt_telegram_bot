@@ -488,7 +488,7 @@ async def post_init(application: Application):
         #BotCommand("/retry", "Перегенерировать ответ"),
         #BotCommand("/balance", "Баланс"),
         #BotCommand("/settings", "Настройки"),
-        BotCommand("/help", "Помощь"),
+        #BotCommand("/help", "Помощь"),
     ])
 
 def run_bot() -> None:
