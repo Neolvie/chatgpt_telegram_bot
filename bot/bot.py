@@ -444,8 +444,8 @@ async def show_balance_handle(update: Update, context: CallbackContext):
 
     total_n_spent_dollars += voice_recognition_n_spent_dollars
 
-    text = f"You spent <b>{total_n_spent_dollars:.03f}$</b>\n"
-    text += f"You used <b>{total_n_used_tokens}</b> tokens\n\n"
+    text = f"Ты потратил <b>{total_n_spent_dollars:.03f}$</b>\n"
+    text += f"Ты использовал <b>{total_n_used_tokens}</b> токенов\n\n"
     text += details_text
 
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
