@@ -99,7 +99,7 @@ async def start_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
 
-    reply_text = "Привет! Я <b>ChatGPT</b> GPT-3.5 OpenAI API 🤖\n"
+    reply_text = "Привет! Я <b>Directum Ario</b> Bot (GPT-3.5) 🤖\n"
     #reply_text += HELP_MESSAGE
 
     reply_text += "\nСпроси меня о чем-нибудь!"
