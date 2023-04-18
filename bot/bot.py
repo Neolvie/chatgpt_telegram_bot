@@ -484,10 +484,10 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
 async def post_init(application: Application):
     await application.bot.set_my_commands([
         BotCommand("/new", "Начать новый диалог"),
-        BotCommand("/mode", "Выбрать режим"),
-        BotCommand("/retry", "Перегенерировать ответ"),
-        BotCommand("/balance", "Баланс"),
-        BotCommand("/settings", "Настройки"),
+        #BotCommand("/mode", "Выбрать режим"),
+        #BotCommand("/retry", "Перегенерировать ответ"),
+        #BotCommand("/balance", "Баланс"),
+        #BotCommand("/settings", "Настройки"),
         BotCommand("/help", "Помощь"),
     ])
 
