@@ -133,7 +133,7 @@ async def retry_handle(update: Update, context: CallbackContext):
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
 
-async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=False):
+async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
     # check if message is edited
     if update.edited_message is not None:
         await edited_message_handle(update, context)
