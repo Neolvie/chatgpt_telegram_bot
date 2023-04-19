@@ -151,7 +151,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         if use_new_dialog_timeout:
             if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
-                await update.message.reply_text(f"Начнем все сначала, т.к. прошло много времени. Режим <b>{openai_utils.CHAT_MODES[chat_mode]['name']}</b> ✅", parse_mode=ParseMode.HTML)
+                await update.message.reply_text(f"Начнем все сначала, т.к. прошло много времени", parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
         # in case of CancelledError
