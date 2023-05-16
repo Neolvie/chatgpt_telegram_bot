@@ -618,13 +618,13 @@ def run_bot() -> None:
 
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
 
-    application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
-    application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
+    # application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
+    # application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
-    application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
-    application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
+    # application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
+    # application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
-    application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
+    # application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
 
     application.add_error_handler(error_handle)
 
