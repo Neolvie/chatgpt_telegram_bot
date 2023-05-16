@@ -14,6 +14,8 @@ config_env = dotenv.dotenv_values(config_dir / "config.env")
 # config parameters
 telegram_token = config_yaml["telegram_token"]
 openai_api_key = config_yaml["openai_api_key"]
+max_free_dialogs = config_yaml["max_free_dialogs"]
+max_free_messages = config_yaml["max_free_messages"]
 payment_provider_token = config_yaml["payment_provider_token"]
 use_chatgpt_api = config_yaml.get("use_chatgpt_api", True)
 allowed_telegram_usernames = config_yaml["allowed_telegram_usernames"]

@@ -93,6 +93,25 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
         db.set_user_attribute(user.id, "n_transcribed_seconds", 0.0)
 
 
+async def check_user_subscription(update: Update, context: CallbackContext, user: User):
+    payment_date = db.get_user_attribute(user.id, "payment_date")
+    if payment_date is None:
+        messages_count = db.get_dialog_messages_count(user.id)
+        if messages_count > config.max_free_messages:
+            return False
+
+        dialogs_count = db.get_dialogs_count(user.id)
+        if dialogs_count > config.max_free_dialogs:
+            return False
+
+        return True
+
+    if (datetime.now() - payment_date).days > 365:
+        return False
+
+    return True
+
+
 async def start_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
@@ -150,7 +169,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         if use_new_dialog_timeout:
             if (datetime.now() - db.get_user_attribute(user_id,
                                                        "last_interaction")).seconds > config.new_dialog_timeout and len(
-                    db.get_dialog_messages(user_id)) > 0:
+                db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
                 await update.message.reply_text(f"Начнем все сначала, т.к. прошло много времени",
                                                 parse_mode=ParseMode.HTML)
@@ -181,7 +200,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                                                            chat_mode=chat_mode)
             else:
                 answer, (
-                n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
+                    n_input_tokens,
+                    n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
                     _message,
                     dialog_messages=dialog_messages,
                     chat_mode=chat_mode
@@ -424,6 +444,20 @@ async def set_settings_handle(update: Update, context: CallbackContext):
 
 
 async def pay_handle(update: Update, context: CallbackContext) -> None:
+    user_id = update.message.from_user.id
+
+    messages_count = db.get_dialog_messages_count(user_id)
+    dialogs_count = db.get_dialogs_count(user_id)
+    subscription = check_user_subscription(update, context, update.message.from_user)
+
+    await update.message.reply_text(f"Messages count: {messages_count}, "
+                                    f"dialogs count: {dialogs_count}, "
+                                    f"subscription: <b>{subscription}</b>", parse_mode=ParseMode.HTML)
+
+    if subscription:
+        payment_date = db.get_user_attribute(user_id, "payment_date")
+        await update.message.reply_text(f"У вас уже есть действующая подписка до <b>{payment_date:%d.%m.%Y}</b>", parse_mode=ParseMode.HTML)
+
     """Sends an invoice without shipping-payment."""
     chat_id = update.message.chat_id
     title = "Подписка на год"
@@ -460,6 +494,9 @@ async def precheckout_callback(update: Update, context: CallbackContext) -> None
 async def successful_payment_callback(update: Update, context: CallbackContext) -> None:
     """Confirms the successful payment."""
     # do something after successfully receiving payment?
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "payment_date", datetime.now())
+
     await update.message.reply_text("Спасибо за подписку!")
 
 
@@ -479,19 +516,19 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     details_text = "🏷️ Детально:\n"
     for model_key in sorted(n_used_tokens_dict.keys()):
         n_input_tokens, n_output_tokens = n_used_tokens_dict[model_key]["n_input_tokens"], \
-        n_used_tokens_dict[model_key]["n_output_tokens"]
+            n_used_tokens_dict[model_key]["n_output_tokens"]
         total_n_used_tokens += n_input_tokens + n_output_tokens
 
         n_input_spent_dollars = config.models["info"][model_key]["price_per_1000_input_tokens"] * (
-                    n_input_tokens / 1000)
+                n_input_tokens / 1000)
         n_output_spent_dollars = config.models["info"][model_key]["price_per_1000_output_tokens"] * (
-                    n_output_tokens / 1000)
+                n_output_tokens / 1000)
         total_n_spent_dollars += n_input_spent_dollars + n_output_spent_dollars
 
         details_text += f"- {model_key}: <b>{n_input_spent_dollars + n_output_spent_dollars:.03f}$</b> / <b>{n_input_tokens + n_output_tokens} токенов</b>\n"
 
     voice_recognition_n_spent_dollars = config.models["info"]["whisper"]["price_per_1_min"] * (
-                n_transcribed_seconds / 60)
+            n_transcribed_seconds / 60)
     if n_transcribed_seconds != 0:
         details_text += f"- Whisper (распознавание голоса): <b>{voice_recognition_n_spent_dollars:.03f}$</b> / <b>{n_transcribed_seconds:.01f} секунд</b>\n"
 

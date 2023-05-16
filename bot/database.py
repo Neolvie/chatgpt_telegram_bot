@@ -108,6 +108,19 @@ class Database:
 
         self.set_user_attribute(user_id, "n_used_tokens", n_used_tokens_dict)
 
+    def get_dialogs_count(self, user_id: int):
+        self.check_if_user_exists(user_id, raise_exception=True)
+
+        return self.dialog_collection.count_documents({"user_id": user_id})
+
+    def get_dialog_messages_count(self, user_id: int):
+        self.check_if_user_exists(user_id, raise_exception=True)
+
+        dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
+        dialog_dict = self.dialog_collection.find_one({"_id": dialog_id, "user_id": user_id})
+        return len(dialog_dict["messages"])
+
+
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)
 
