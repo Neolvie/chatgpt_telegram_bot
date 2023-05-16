@@ -2,7 +2,7 @@ version: "3"
 
 services:
   mongo:
-    container_name: mongo
+    container_name: ${MONGO_CONTAINER_NAME:-mongo}
     image: mongo:latest
     restart: always
     ports:
@@ -12,7 +12,7 @@ services:
     # TODO: add auth
 
   chatgpt_telegram_bot:
-    container_name: chatgpt_telegram_bot
+    container_name: ${TELEGRAM_BOT_CONTAINER_NAME:-chatgpt_telegram_bot}
     command: python3 bot/bot.py
     restart: always
     build:
@@ -22,7 +22,7 @@ services:
       - mongo
 
   mongo_express:
-    container_name: mongo-express
+    container_name: ${MONGO_EXPRESS_CONTAINER_NAME:-mongo-express}
     image: mongo-express:latest
     restart: always
     ports:
