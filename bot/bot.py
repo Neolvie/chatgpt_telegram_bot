@@ -167,6 +167,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     if not has_subscription:
         await update.message.reply_text("Пробный период завершился. Чтобы продолжить общение с ботом, оформи подписку /subscribe",
                                         parse_mode=ParseMode.HTML)
+        return
 
     async def message_handle_fn():
         chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
