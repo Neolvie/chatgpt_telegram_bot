@@ -99,10 +99,8 @@ async def start_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
 
-    reply_text = "Привет! Я <b>Directum Ario</b> Bot (GPT-3.5) 🤖\n"
+    reply_text = "Привет! Давай начнем новый диалог? /new \n"
     #reply_text += HELP_MESSAGE
-
-    reply_text += "\nСпроси меня о чем-нибудь!"
 
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
 
@@ -488,7 +486,7 @@ async def post_init(application: Application):
         #BotCommand("/retry", "Перегенерировать ответ"),
         #BotCommand("/balance", "Баланс"),
         #BotCommand("/settings", "Настройки"),
-        BotCommand("/help", "Помощь"),
+        #BotCommand("/help", "Помощь"),
     ])
 
 def run_bot() -> None:
