@@ -462,6 +462,8 @@ async def subscribe_handle(update: Update, context: CallbackContext) -> None:
                                         f"до <b>{(payment_date + relativedelta(years=1)):%d.%m.%Y}</b>",
                                         parse_mode=ParseMode.HTML)
 
+        return
+
     """Sends an invoice without shipping-payment."""
     chat_id = update.message.chat_id
     title = "Подписка на год"
