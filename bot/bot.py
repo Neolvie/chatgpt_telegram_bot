@@ -109,7 +109,8 @@ async def help_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
-    await update.message.reply_text(HELP_MESSAGE, parse_mode=ParseMode.HTML)
+    chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+    await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['help_message']}", parse_mode=ParseMode.HTML)
 
 
 async def retry_handle(update: Update, context: CallbackContext):
@@ -486,7 +487,7 @@ async def post_init(application: Application):
         #BotCommand("/retry", "Перегенерировать ответ"),
         #BotCommand("/balance", "Баланс"),
         #BotCommand("/settings", "Настройки"),
-        #BotCommand("/help", "Помощь"),
+        BotCommand("/help", "Помощь"),
     ])
 
 def run_bot() -> None:
