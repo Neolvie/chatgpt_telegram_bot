@@ -448,7 +448,7 @@ async def pay_handle(update: Update, context: CallbackContext) -> None:
 
     messages_count = db.get_dialog_messages_count(user_id)
     dialogs_count = db.get_dialogs_count(user_id)
-    subscription = check_user_subscription(update, context, update.message.from_user)
+    subscription = await check_user_subscription(update, context, update.message.from_user)
 
     await update.message.reply_text(f"Messages count: {messages_count}, "
                                     f"dialogs count: {dialogs_count}, "
