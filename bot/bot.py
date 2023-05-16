@@ -471,9 +471,9 @@ async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     # select a payload just for you to recognize its the donation from your bot
     payload = "Bot-Payload"
     # In order to get a provider_token see https://core.telegram.org/bots/payments#getting-a-token
-    currency = "RUB"
+    currency = config.currency
     # price in dollars
-    price = 399
+    price = config.price
     # price * 100 so as to include 2 decimal points
     prices = [LabeledPrice("Годовая подписка", price * 100)]
 

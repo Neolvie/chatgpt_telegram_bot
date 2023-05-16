@@ -7,6 +7,8 @@ new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
 enable_message_streaming: true  # if set, messages will be shown to user word-by-word
 max_free_dialogs: 5
 max_free_messages: 10
+price: 449
+currency: "RUB"
 
 # prices
 chatgpt_price_per_1000_tokens: 0.002
