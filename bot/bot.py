@@ -162,6 +162,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     user_id = update.message.from_user.id
 
+    has_subscription = await check_user_subscription(update, context, update.message.from_user)
+
+    if not has_subscription:
+        await update.message.reply_text("Пробный период завершился. Чтобы продолжить общение с ботом, оформи подписку /subscribe",
+                                        parse_mode=ParseMode.HTML)
+
     async def message_handle_fn():
         chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
@@ -443,7 +449,7 @@ async def set_settings_handle(update: Update, context: CallbackContext):
             pass
 
 
-async def pay_handle(update: Update, context: CallbackContext) -> None:
+async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
 
     messages_count = db.get_dialog_messages_count(user_id)
@@ -603,7 +609,7 @@ def run_bot() -> None:
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
 
-    application.add_handler(CommandHandler("pay", pay_handle, filters=user_filter))
+    application.add_handler(CommandHandler("subscribe", subscribe_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
