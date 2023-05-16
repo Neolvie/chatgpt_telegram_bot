@@ -8,6 +8,7 @@ import tempfile
 import pydub
 from pathlib import Path
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 import telegram
 from telegram import (
@@ -453,17 +454,13 @@ async def set_settings_handle(update: Update, context: CallbackContext):
 async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
 
-    messages_count = db.get_dialog_messages_count(user_id)
-    dialogs_count = db.get_dialogs_count(user_id)
     subscription = await check_user_subscription(update, context, update.message.from_user)
-
-    await update.message.reply_text(f"Messages count: {messages_count}, "
-                                    f"dialogs count: {dialogs_count}, "
-                                    f"subscription: <b>{subscription}</b>", parse_mode=ParseMode.HTML)
 
     if subscription:
         payment_date = db.get_user_attribute(user_id, "payment_date")
-        await update.message.reply_text(f"У вас уже есть действующая подписка до <b>{payment_date:%d.%m.%Y}</b>", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"У вас уже есть действующая подписка "
+                                        f"до <b>{(payment_date + relativedelta(years=1)):%d.%m.%Y}</b>",
+                                        parse_mode=ParseMode.HTML)
 
     """Sends an invoice without shipping-payment."""
     chat_id = update.message.chat_id
