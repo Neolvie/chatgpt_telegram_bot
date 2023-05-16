@@ -26,14 +26,14 @@ from telegram.ext import (
     MessageHandler,
     CallbackQueryHandler,
     AIORateLimiter,
-    filters
+    filters,
+    PreCheckoutQueryHandler
 )
 from telegram.constants import ParseMode, ChatAction
 
 import config
 import database
 import openai_utils
-
 
 # setup
 db = database.Database()
@@ -64,7 +64,7 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
             update.message.chat_id,
             username=user.username,
             first_name=user.first_name,
-            last_name= user.last_name
+            last_name=user.last_name
         )
         db.start_new_dialog(user.id)
 
@@ -148,9 +148,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
         # new dialog timeout
         if use_new_dialog_timeout:
-            if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
+            if (datetime.now() - db.get_user_attribute(user_id,
+                                                       "last_interaction")).seconds > config.new_dialog_timeout and len(
+                    db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
-                await update.message.reply_text(f"Начнем все сначала, т.к. прошло много времени", parse_mode=ParseMode.HTML)
+                await update.message.reply_text(f"Начнем все сначала, т.к. прошло много времени",
+                                                parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
         # in case of CancelledError
@@ -174,9 +177,11 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             chatgpt_instance = openai_utils.ChatGPT(model=current_model)
             if config.enable_message_streaming:
-                gen = chatgpt_instance.send_message_stream(_message, dialog_messages=dialog_messages, chat_mode=chat_mode)
+                gen = chatgpt_instance.send_message_stream(_message, dialog_messages=dialog_messages,
+                                                           chat_mode=chat_mode)
             else:
-                answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
+                answer, (
+                n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
                     _message,
                     dialog_messages=dialog_messages,
                     chat_mode=chat_mode
@@ -198,12 +203,15 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                     continue
 
                 try:
-                    await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=parse_mode)
+                    await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id,
+                                                        message_id=placeholder_message.message_id,
+                                                        parse_mode=parse_mode)
                 except telegram.error.BadRequest as e:
                     if str(e).startswith("Сообщение не исправлено"):
                         continue
                     else:
-                        await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id)
+                        await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id,
+                                                            message_id=placeholder_message.message_id)
 
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
@@ -294,7 +302,8 @@ async def voice_message_handle(update: Update, context: CallbackContext):
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     # update n_transcribed_seconds
-    db.set_user_attribute(user_id, "n_transcribed_seconds", voice.duration + db.get_user_attribute(user_id, "n_transcribed_seconds"))
+    db.set_user_attribute(user_id, "n_transcribed_seconds",
+                          voice.duration + db.get_user_attribute(user_id, "n_transcribed_seconds"))
 
     await message_handle(update, context, message=transcribed_text)
 
@@ -310,7 +319,8 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
     await update.message.reply_text("Новый диалог ✅")
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-    await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+    await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}",
+                                    parse_mode=ParseMode.HTML)
 
 
 async def cancel_handle(update: Update, context: CallbackContext):
@@ -412,6 +422,7 @@ async def set_settings_handle(update: Update, context: CallbackContext):
         if str(e).startswith("Сообщение не исправлено"):
             pass
 
+
 async def pay_handle(update: Update, context: CallbackContext) -> None:
     """Sends an invoice without shipping-payment."""
     chat_id = update.message.chat_id
@@ -432,6 +443,26 @@ async def pay_handle(update: Update, context: CallbackContext) -> None:
         chat_id, title, description, payload, config.payment_provider_token, currency, prices
     )
 
+
+# after (optional) shipping, it's the pre-checkout
+async def precheckout_callback(update: Update, context: CallbackContext) -> None:
+    """Answers the PreQecheckoutQuery"""
+    query = update.pre_checkout_query
+    # check the payload, is this from your bot?
+    if query.invoice_payload != "Bot-Payload":
+        # answer False pre_checkout_query
+        await query.answer(ok=False, error_message="Что-то пошло не так...")
+    else:
+        await query.answer(ok=True)
+
+
+# finally, after contacting the payment provider...
+async def successful_payment_callback(update: Update, context: CallbackContext) -> None:
+    """Confirms the successful payment."""
+    # do something after successfully receiving payment?
+    await update.message.reply_text("Спасибо за подписку!")
+
+
 async def show_balance_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
 
@@ -447,16 +478,20 @@ async def show_balance_handle(update: Update, context: CallbackContext):
 
     details_text = "🏷️ Детально:\n"
     for model_key in sorted(n_used_tokens_dict.keys()):
-        n_input_tokens, n_output_tokens = n_used_tokens_dict[model_key]["n_input_tokens"], n_used_tokens_dict[model_key]["n_output_tokens"]
+        n_input_tokens, n_output_tokens = n_used_tokens_dict[model_key]["n_input_tokens"], \
+        n_used_tokens_dict[model_key]["n_output_tokens"]
         total_n_used_tokens += n_input_tokens + n_output_tokens
 
-        n_input_spent_dollars = config.models["info"][model_key]["price_per_1000_input_tokens"] * (n_input_tokens / 1000)
-        n_output_spent_dollars = config.models["info"][model_key]["price_per_1000_output_tokens"] * (n_output_tokens / 1000)
+        n_input_spent_dollars = config.models["info"][model_key]["price_per_1000_input_tokens"] * (
+                    n_input_tokens / 1000)
+        n_output_spent_dollars = config.models["info"][model_key]["price_per_1000_output_tokens"] * (
+                    n_output_tokens / 1000)
         total_n_spent_dollars += n_input_spent_dollars + n_output_spent_dollars
 
         details_text += f"- {model_key}: <b>{n_input_spent_dollars + n_output_spent_dollars:.03f}$</b> / <b>{n_input_tokens + n_output_tokens} токенов</b>\n"
 
-    voice_recognition_n_spent_dollars = config.models["info"]["whisper"]["price_per_1_min"] * (n_transcribed_seconds / 60)
+    voice_recognition_n_spent_dollars = config.models["info"]["whisper"]["price_per_1_min"] * (
+                n_transcribed_seconds / 60)
     if n_transcribed_seconds != 0:
         details_text += f"- Whisper (распознавание голоса): <b>{voice_recognition_n_spent_dollars:.03f}$</b> / <b>{n_transcribed_seconds:.01f} секунд</b>\n"
 
@@ -499,15 +534,17 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
     except:
         await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 
+
 async def post_init(application: Application):
     await application.bot.set_my_commands([
         BotCommand("/new", "Начать новый диалог"),
-        #BotCommand("/mode", "Выбрать режим"),
-        #BotCommand("/retry", "Перегенерировать ответ"),
-        #BotCommand("/balance", "Баланс"),
-        #BotCommand("/settings", "Настройки"),
+        # BotCommand("/mode", "Выбрать режим"),
+        # BotCommand("/retry", "Перегенерировать ответ"),
+        # BotCommand("/balance", "Баланс"),
+        # BotCommand("/settings", "Настройки"),
         BotCommand("/help", "Помощь"),
     ])
+
 
 def run_bot() -> None:
     application = (
@@ -547,6 +584,14 @@ def run_bot() -> None:
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
 
     application.add_error_handler(error_handle)
+
+    # Pre-checkout handler to final check
+    application.add_handler(PreCheckoutQueryHandler(precheckout_callback))
+
+    # Success! Notify your user!
+    application.add_handler(
+        MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
+    )
 
     # start the bot
     application.run_polling()
