@@ -15,7 +15,8 @@ from telegram import (
     User,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    BotCommand
+    BotCommand,
+    LabeledPrice
 )
 from telegram.ext import (
     Application,
@@ -411,6 +412,25 @@ async def set_settings_handle(update: Update, context: CallbackContext):
         if str(e).startswith("Сообщение не исправлено"):
             pass
 
+async def pay_handle(update: Update, context: CallbackContext) -> None:
+    """Sends an invoice without shipping-payment."""
+    chat_id = update.message.chat_id
+    title = "Подписка на год"
+    description = "Безлимитное общение с ботом в течение года"
+    # select a payload just for you to recognize its the donation from your bot
+    payload = "Bot-Payload"
+    # In order to get a provider_token see https://core.telegram.org/bots/payments#getting-a-token
+    currency = "RUB"
+    # price in dollars
+    price = 399
+    # price * 100 so as to include 2 decimal points
+    prices = [LabeledPrice("Годовая подписка", price * 100)]
+
+    # optionally pass need_name=True, need_phone_number=True,
+    # need_email=True, need_shipping_address=True, is_flexible=True
+    await context.bot.send_invoice(
+        chat_id, title, description, payload, config.payment_provider_token, currency, prices
+    )
 
 async def show_balance_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
@@ -508,6 +528,8 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
+
+    application.add_handler(CommandHandler("pay", pay_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
