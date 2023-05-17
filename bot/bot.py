@@ -451,6 +451,15 @@ async def set_settings_handle(update: Update, context: CallbackContext):
             pass
 
 
+async def mystats_handle(update: Update, context: CallbackContext) -> None:
+    users_count = db.get_users_count()
+    subscription_count = db.get_subscription_count()
+
+    await update.message.reply_text(f"Users: <b>{users_count}</b><br/>"
+                                    f"Subscriptions: <b>{subscription_count}</b>",
+                                    parse_mode=ParseMode.HTML)
+
+
 async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
 
@@ -610,6 +619,7 @@ def run_bot() -> None:
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
 
     application.add_handler(CommandHandler("subscribe", subscribe_handle, filters=user_filter))
+    application.add_handler(CommandHandler("mystats", mystats_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
