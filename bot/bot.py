@@ -455,8 +455,8 @@ async def mystats_handle(update: Update, context: CallbackContext) -> None:
     users_count = db.get_users_count()
     subscription_count = db.get_subscription_count()
 
-    await update.message.reply_text(f"Users: <b>{users_count}</b><br/>"
-                                    f"Subscriptions: <b>{subscription_count}</b>",
+    await update.message.reply_text(f"Users: <b>{users_count}</b>"
+                                    f"\nSubscriptions: <b>{subscription_count}</b>",
                                     parse_mode=ParseMode.HTML)
 
 
