@@ -588,14 +588,18 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
 
 
 async def post_init(application: Application):
-    await application.bot.set_my_commands([
+    commands = [
         BotCommand("/new", "Начать новый диалог"),
-        # BotCommand("/mode", "Выбрать режим"),
         # BotCommand("/retry", "Перегенерировать ответ"),
         # BotCommand("/balance", "Баланс"),
         # BotCommand("/settings", "Настройки"),
         BotCommand("/help", "Помощь"),
-    ])
+    ]
+
+    if len(openai_utils.CHAT_MODES) > 1:
+        commands.append(BotCommand("/mode", "Выбрать режим"))
+
+    await application.bot.set_my_commands(commands)
 
 
 def run_bot() -> None:
@@ -628,7 +632,9 @@ def run_bot() -> None:
 
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
 
-    # application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
+    if len(openai_utils.CHAT_MODES) > 1:
+        application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
+
     # application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
     # application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
