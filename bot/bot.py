@@ -593,11 +593,12 @@ async def post_init(application: Application):
         # BotCommand("/retry", "Перегенерировать ответ"),
         # BotCommand("/balance", "Баланс"),
         # BotCommand("/settings", "Настройки"),
-        BotCommand("/help", "Помощь"),
     ]
 
     if len(openai_utils.CHAT_MODES) > 1:
         commands.append(BotCommand("/mode", "Выбрать режим"))
+
+    commands.append(BotCommand("/help", "Помощь"))
 
     await application.bot.set_my_commands(commands)
 
