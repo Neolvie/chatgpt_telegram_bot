@@ -634,8 +634,7 @@ def run_bot() -> None:
 
     if len(openai_utils.CHAT_MODES) > 1:
         application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
-
-    # application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
+        application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
     # application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
     # application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
