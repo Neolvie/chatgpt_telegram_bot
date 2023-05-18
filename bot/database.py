@@ -51,7 +51,8 @@ class Database:
 
             "n_transcribed_seconds": 0.0,  # voice message transcription
 
-            "payment_date": None
+            "payment_date": None,
+            "has_reached_limit": False
         }
 
         if not self.check_if_user_exists(user_id):
@@ -114,6 +115,9 @@ class Database:
     def get_subscription_count(self):
         return self.user_collection.count_documents({"payment_date": {"$exists": True, "$ne": None}})
 
+    def get_reached_limit_count(self):
+        return self.user_collection.count_documents({"has_reached_limit": True})
+
     def get_dialogs_count(self, user_id: int):
         self.check_if_user_exists(user_id, raise_exception=True)
 
@@ -125,6 +129,14 @@ class Database:
         dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
         dialog_dict = self.dialog_collection.find_one({"_id": dialog_id, "user_id": user_id})
         return len(dialog_dict["messages"])
+
+    def set_user_reached_limit(self, user_id: int):
+        self.check_if_user_exists(user_id, raise_exception=True)
+
+        self.user_collection.update_one(
+            {"user_id": user_id},
+            {"has_reached_limit": True}
+        )
 
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)

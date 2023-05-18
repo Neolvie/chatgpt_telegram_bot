@@ -99,10 +99,12 @@ async def check_user_subscription(update: Update, context: CallbackContext, user
     if payment_date is None:
         messages_count = db.get_dialog_messages_count(user.id)
         if messages_count > config.max_free_messages:
+            db.set_user_reached_limit(user.id)
             return False
 
         dialogs_count = db.get_dialogs_count(user.id)
         if dialogs_count > config.max_free_dialogs:
+            db.set_user_reached_limit(user.id)
             return False
 
         return True
@@ -454,9 +456,14 @@ async def set_settings_handle(update: Update, context: CallbackContext):
 async def mystats_handle(update: Update, context: CallbackContext) -> None:
     users_count = db.get_users_count()
     subscription_count = db.get_subscription_count()
+    reached_limit_count = db.get_reached_limit_count()
+
+    reached_limit_rate = reached_limit_count / users_count * 100
+    subscription_rate = subscription_count / users_count * 100
 
     await update.message.reply_text(f"Users: <b>{users_count}</b>"
-                                    f"\nSubscriptions: <b>{subscription_count}</b>",
+                                    f"\nReached limit: <b>{reached_limit_count}</b> ({reached_limit_rate:0f})"
+                                    f"\nSubscriptions: <b>{subscription_count}</b> ({subscription_rate:0f})",
                                     parse_mode=ParseMode.HTML)
 
 
