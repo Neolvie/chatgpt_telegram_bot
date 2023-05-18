@@ -493,10 +493,31 @@ async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     # price * 100 so as to include 2 decimal points
     prices = [LabeledPrice("Годовая подписка", price * 100)]
 
+    receipt = {
+        'items': [
+            {
+                'description': description,
+                'quantity': "1.00",
+                'amount': {
+                    "value": str(price),
+                    "currency": currency
+                },
+                'vat_code': 1
+            }
+        ]}
+
     # optionally pass need_name=True, need_phone_number=True,
     # need_email=True, need_shipping_address=True, is_flexible=True
     await context.bot.send_invoice(
-        chat_id, title, description, payload, config.payment_provider_token, currency, prices
+        chat_id,
+        title,
+        description,
+        payload,
+        config.payment_provider_token,
+        currency,
+        prices,
+        need_email=True,
+        provider_data={'receipt': json.dumps(receipt)}
     )
 
 
