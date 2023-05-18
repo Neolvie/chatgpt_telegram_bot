@@ -135,7 +135,7 @@ class Database:
 
         self.user_collection.update_one(
             {"user_id": user_id},
-            {"$set": {"has_reached_limit": True}}
+            {"$set": {"has_reached_limit": "true"}}
         )
 
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
