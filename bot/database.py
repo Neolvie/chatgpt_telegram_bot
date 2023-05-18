@@ -110,7 +110,7 @@ class Database:
         self.set_user_attribute(user_id, "n_used_tokens", n_used_tokens_dict)
 
     def get_users_count(self):
-        return self.user_collection.count_documents({}) - 1
+        return self.user_collection.count_documents({})
 
     def get_subscription_count(self):
         return self.user_collection.count_documents({"payment_date": {"$exists": True, "$ne": None}})
