@@ -517,6 +517,7 @@ async def subscribe_handle(update: Update, context: CallbackContext) -> None:
         currency,
         prices,
         need_email=True,
+        send_email_to_provider=True,
         provider_data={'receipt': receipt}
     )
 
