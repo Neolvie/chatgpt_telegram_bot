@@ -133,10 +133,7 @@ class Database:
     def set_user_reached_limit(self, user_id: int):
         self.check_if_user_exists(user_id, raise_exception=True)
 
-        self.user_collection.update_one(
-            {"user_id": user_id},
-            {"$set": {"has_reached_limit": 1}}
-        )
+        self.set_user_attribute(user_id, "has_reached_limit", 1)
 
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)
