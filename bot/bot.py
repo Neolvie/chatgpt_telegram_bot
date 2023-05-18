@@ -458,12 +458,12 @@ async def mystats_handle(update: Update, context: CallbackContext) -> None:
     subscription_count = db.get_subscription_count()
     reached_limit_count = db.get_reached_limit_count()
 
-    reached_limit_rate = reached_limit_count / users_count * 100
-    subscription_rate = subscription_count / users_count * 100
+    reached_limit_rate = int(reached_limit_count / users_count * 100)
+    subscription_rate = int(subscription_count / users_count * 100)
 
     await update.message.reply_text(f"Users: <b>{users_count}</b>"
-                                    f"\nReached limit: <b>{reached_limit_count}</b> ({reached_limit_rate:0f})"
-                                    f"\nSubscriptions: <b>{subscription_count}</b> ({subscription_rate:0f})",
+                                    f"\nReached limit: <b>{reached_limit_count}</b> ({reached_limit_rate}%)"
+                                    f"\nSubscriptions: <b>{subscription_count}</b> ({subscription_rate}%)",
                                     parse_mode=ParseMode.HTML)
 
 
