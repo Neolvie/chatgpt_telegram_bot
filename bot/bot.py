@@ -540,6 +540,7 @@ async def successful_payment_callback(update: Update, context: CallbackContext) 
     # do something after successfully receiving payment?
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "payment_date", datetime.now())
+    db.set_user_attribute(user_id, "transaction", update.message.successful_payment.provider_payment_charge_id)
 
     await update.message.reply_text("Спасибо за подписку!")
 
