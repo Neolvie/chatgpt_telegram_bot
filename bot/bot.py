@@ -95,8 +95,13 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 
 
 async def check_user_subscription(update: Update, context: CallbackContext, user: User):
-    payment_date = db.get_user_attribute(user.id, "payment_date")
-    if payment_date is None:
+    subscribe_to = db.get_user_attribute(user.id, "subscribe_to")
+    if subscribe_to is None:
+        user_reached_limit = db.get_user_attribute(user.id, 'has_reached_limit')
+
+        if user_reached_limit == 1:
+            return False
+
         messages_count = db.get_dialog_messages_count(user.id)
         if messages_count > config.max_free_messages:
             db.set_user_reached_limit(user.id)
@@ -109,7 +114,7 @@ async def check_user_subscription(update: Update, context: CallbackContext, user
 
         return True
 
-    if (datetime.now() - payment_date).days > 365:
+    if (datetime.now() - subscribe_to).days > 0:
         return False
 
     return True
@@ -168,8 +173,14 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     has_subscription = await check_user_subscription(update, context, update.message.from_user)
 
     if not has_subscription:
-        await update.message.reply_text("Пробный период завершился. Чтобы продолжить общение с ботом, оформи подписку /subscribe",
-                                        parse_mode=ParseMode.HTML)
+        subscribe_to = db.get_user_attribute(user_id, "subscribe_to")
+        if subscribe_to is not None:
+            await update.message.reply_text(
+                f"Подписка завершилась <b>{subscribe_to:%d.%m.%Y}</b>. Чтобы продолжить общение с ботом, оформи новую подписку /subscribe",
+                parse_mode=ParseMode.HTML)
+        else:
+            await update.message.reply_text("Пробный период завершился. Чтобы продолжить общение с ботом, оформи подписку /subscribe",
+                                            parse_mode=ParseMode.HTML)
         return
 
     async def message_handle_fn():
@@ -473,17 +484,15 @@ async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     subscription = await check_user_subscription(update, context, update.message.from_user)
 
     if subscription:
-        payment_date = db.get_user_attribute(user_id, "payment_date")
-        await update.message.reply_text(f"У вас уже есть действующая подписка "
-                                        f"до <b>{(payment_date + relativedelta(years=1)):%d.%m.%Y}</b>",
+        subscribe_to = db.get_user_attribute(user_id, "subscribe_to")
+        await update.message.reply_text(f"У вас уже есть действующая подписка до <b>{subscribe_to:%d.%m.%Y}</b>",
                                         parse_mode=ParseMode.HTML)
-
         return
 
     """Sends an invoice without shipping-payment."""
     chat_id = update.message.chat_id
-    title = "Подписка на год"
-    description = "Безлимитное общение с ботом в течение года"
+    title = "Подписка на бота"
+    description = f"Безлимитное общение с ботом на {config.subscribe_period_text}"
     # select a payload just for you to recognize its the donation from your bot
     payload = "Bot-Payload"
     # In order to get a provider_token see https://core.telegram.org/bots/payments#getting-a-token
@@ -491,7 +500,7 @@ async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     # price in dollars
     price = config.price
     # price * 100 so as to include 2 decimal points
-    prices = [LabeledPrice("Годовая подписка", price * 100)]
+    prices = [LabeledPrice(f"Подписка ({config.subscribe_period_text})", price * 100)]
 
     receipt = {
         'items': [
@@ -540,6 +549,7 @@ async def successful_payment_callback(update: Update, context: CallbackContext) 
     # do something after successfully receiving payment?
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "payment_date", datetime.now())
+    db.set_user_attribute(user_id, "subscribe_to", datetime.now() + relativedelta(days=config.subscribe_period))
     db.set_user_attribute(user_id, "transaction", update.message.successful_payment.provider_payment_charge_id)
 
     await update.message.reply_text("Спасибо за подписку!")

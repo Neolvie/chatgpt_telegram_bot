@@ -9,6 +9,8 @@ max_free_dialogs: 5
 max_free_messages: 10
 price: 449
 currency: "RUB"
+subscribe_period: 92 # days
+subscribe_period_text: "3 месяца"
 
 # prices
 chatgpt_price_per_1000_tokens: 0.002

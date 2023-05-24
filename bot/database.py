@@ -52,6 +52,7 @@ class Database:
             "n_transcribed_seconds": 0.0,  # voice message transcription
 
             "payment_date": None,
+            "subscribe_to": None,
             "transaction": None,
             "has_reached_limit": 0
         }
