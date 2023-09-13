@@ -54,7 +54,9 @@ class Database:
             "payment_date": None,
             "subscribe_to": None,
             "transaction": None,
-            "has_reached_limit": 0
+            "has_reached_limit": 0,
+            "messages_count": 0,
+            "subscriptions": []
         }
 
         if not self.check_if_user_exists(user_id):
@@ -117,6 +119,33 @@ class Database:
     def get_subscription_count(self):
         return self.user_collection.count_documents({"payment_date": {"$exists": True, "$ne": None}})
 
+    def get_subscribe_to(self, user_id: int):
+        current_model = self.get_user_attribute(user_id, 'current_model')
+        subscriptions = self.get_user_attribute(user_id, 'subscriptions')
+
+        model_subscriptions = [subscription for subscription in subscriptions if current_model in subscription['models']]
+
+        if len(model_subscriptions) == 0:
+            return None
+
+        newest_subscription = sorted(model_subscriptions, key=lambda s: s['subscribe_to'], reverse=True)[0]
+
+        return newest_subscription['subscribe_to']
+
+    def get_current_subscription(self, user_id: int):
+        subscriptions = self.get_user_attribute(user_id, 'subscriptions')
+
+        if len(subscriptions) == 0:
+            return None
+
+        subscription = sorted(subscriptions, key=lambda s: s['subscribe_to'], reverse=True)[0]
+
+        if (datetime.now() - subscription['subscribe_to']).days > 0:
+            return None
+
+        return subscription
+
+
     def get_reached_limit_count(self):
         return self.user_collection.count_documents({"has_reached_limit": 1})
 
@@ -152,7 +181,12 @@ class Database:
         if dialog_id is None:
             dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
 
+        self.set_user_attribute(user_id, "messages_count", self.get_user_attribute(user_id, "messages_count") + 1)
+
         self.dialog_collection.update_one(
             {"_id": dialog_id, "user_id": user_id},
             {"$set": {"messages": dialog_messages}}
         )
+
+
+db = Database()

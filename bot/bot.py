@@ -1,4 +1,3 @@
-import os
 import logging
 import asyncio
 import traceback
@@ -8,7 +7,6 @@ import tempfile
 import pydub
 from pathlib import Path
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 
 import telegram
 from telegram import (
@@ -16,8 +14,7 @@ from telegram import (
     User,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    BotCommand,
-    LabeledPrice
+    BotCommand
 )
 from telegram.ext import (
     Application,
@@ -30,14 +27,14 @@ from telegram.ext import (
     filters,
     PreCheckoutQueryHandler
 )
-from telegram.constants import ParseMode, ChatAction
+from telegram.constants import ParseMode
 
 import config
-import database
 import openai_utils
+from database import db
+from subscriptions import check_user_subscription, subscribe_handle, successful_payment_callback, precheckout_callback
 
 # setup
-db = database.Database()
 logger = logging.getLogger(__name__)
 
 user_semaphores = {}
@@ -94,32 +91,6 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
         db.set_user_attribute(user.id, "n_transcribed_seconds", 0.0)
 
 
-async def check_user_subscription(update: Update, context: CallbackContext, user: User):
-    subscribe_to = db.get_user_attribute(user.id, "subscribe_to")
-    if subscribe_to is None:
-        user_reached_limit = db.get_user_attribute(user.id, 'has_reached_limit')
-
-        if user_reached_limit == 1:
-            return False
-
-        messages_count = db.get_dialog_messages_count(user.id)
-        if messages_count > config.max_free_messages:
-            db.set_user_reached_limit(user.id)
-            return False
-
-        dialogs_count = db.get_dialogs_count(user.id)
-        if dialogs_count > config.max_free_dialogs:
-            db.set_user_reached_limit(user.id)
-            return False
-
-        return True
-
-    if (datetime.now() - subscribe_to).days > 0:
-        return False
-
-    return True
-
-
 async def start_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
@@ -173,13 +144,13 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     has_subscription = await check_user_subscription(update, context, update.message.from_user)
 
     if not has_subscription:
-        subscribe_to = db.get_user_attribute(user_id, "subscribe_to")
+        subscribe_to = db.get_subscribe_to(user_id)
         if subscribe_to is not None:
             await update.message.reply_text(
-                f"Подписка завершилась <b>{subscribe_to:%d.%m.%Y}</b>. Чтобы продолжить общение с ботом, оформи новую подписку /subscribe",
+                f"Подписка на данную модель завершилась <b>{subscribe_to:%d.%m.%Y}</b>. Чтобы продолжить общение с ботом, оформи новую подписку /subscribe",
                 parse_mode=ParseMode.HTML)
         else:
-            await update.message.reply_text("Пробный период завершился. Чтобы продолжить общение с ботом, оформи подписку /subscribe",
+            await update.message.reply_text("Пробный период для этой модели завершился. Чтобы продолжить общение с ботом, оформи подписку /subscribe. Или выбери другую модель /settings",
                                             parse_mode=ParseMode.HTML)
         return
 
@@ -478,81 +449,10 @@ async def mystats_handle(update: Update, context: CallbackContext) -> None:
                                     parse_mode=ParseMode.HTML)
 
 
-async def subscribe_handle(update: Update, context: CallbackContext) -> None:
-    user_id = update.message.from_user.id
-
-    subscription = await check_user_subscription(update, context, update.message.from_user)
-
-    if subscription:
-        subscribe_to = db.get_user_attribute(user_id, "subscribe_to")
-        await update.message.reply_text(f"У вас уже есть действующая подписка до <b>{subscribe_to:%d.%m.%Y}</b>",
-                                        parse_mode=ParseMode.HTML)
-        return
-
-    """Sends an invoice without shipping-payment."""
-    chat_id = update.message.chat_id
-    title = "Подписка на бота"
-    description = f"Безлимитное общение с ботом на {config.subscribe_period_text}"
-    # select a payload just for you to recognize its the donation from your bot
-    payload = "Bot-Payload"
-    # In order to get a provider_token see https://core.telegram.org/bots/payments#getting-a-token
-    currency = config.currency
-    # price in dollars
-    price = config.price
-    # price * 100 so as to include 2 decimal points
-    prices = [LabeledPrice(f"Подписка ({config.subscribe_period_text})", price * 100)]
-
-    receipt = {
-        'items': [
-            {
-                'description': description,
-                'quantity': "1.00",
-                'amount': {
-                    "value": str(price),
-                    "currency": currency
-                },
-                'vat_code': 1
-            }
-        ]}
-
-    # optionally pass need_name=True, need_phone_number=True,
-    # need_email=True, need_shipping_address=True, is_flexible=True
-    await context.bot.send_invoice(
-        chat_id,
-        title,
-        description,
-        payload,
-        config.payment_provider_token,
-        currency,
-        prices,
-        need_email=True,
-        send_email_to_provider=True,
-        provider_data={'receipt': receipt}
-    )
-
-
 # after (optional) shipping, it's the pre-checkout
-async def precheckout_callback(update: Update, context: CallbackContext) -> None:
-    """Answers the PreQecheckoutQuery"""
-    query = update.pre_checkout_query
-    # check the payload, is this from your bot?
-    if query.invoice_payload != "Bot-Payload":
-        # answer False pre_checkout_query
-        await query.answer(ok=False, error_message="Что-то пошло не так...")
-    else:
-        await query.answer(ok=True)
 
 
 # finally, after contacting the payment provider...
-async def successful_payment_callback(update: Update, context: CallbackContext) -> None:
-    """Confirms the successful payment."""
-    # do something after successfully receiving payment?
-    user_id = update.message.from_user.id
-    db.set_user_attribute(user_id, "payment_date", datetime.now())
-    db.set_user_attribute(user_id, "subscribe_to", datetime.now() + relativedelta(days=config.subscribe_period))
-    db.set_user_attribute(user_id, "transaction", update.message.successful_payment.provider_payment_charge_id)
-
-    await update.message.reply_text("Спасибо за подписку!")
 
 
 async def show_balance_handle(update: Update, context: CallbackContext):
@@ -632,8 +532,11 @@ async def post_init(application: Application):
         BotCommand("/new", "Начать новый диалог"),
         # BotCommand("/retry", "Перегенерировать ответ"),
         # BotCommand("/balance", "Баланс"),
-        # BotCommand("/settings", "Настройки"),
+
     ]
+
+    if len(config.models["available_text_models"]) > 1:
+        commands.append(BotCommand("/settings", "Выбрать модель"))
 
     if len(openai_utils.CHAT_MODES) > 1:
         commands.append(BotCommand("/mode", "Выбрать режим"))
@@ -677,8 +580,9 @@ def run_bot() -> None:
         application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
         application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
-    # application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
-    # application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
+    if len(config.models["available_text_models"]) > 1:
+        application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
+        application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
     # application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
 
