@@ -171,6 +171,9 @@ class Database:
     def get_all_user_ids(self):
         return self.user_collection.find({}, {"_id": 1})
 
+    def get_all_user_chat_ids(self):
+        return self.user_collection.find({}, {"chat_id": 1, "_id": 0})
+
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)
 

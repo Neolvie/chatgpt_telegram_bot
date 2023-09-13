@@ -23,6 +23,7 @@ enable_message_streaming = config_yaml.get("enable_message_streaming", True)
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 levels = config_yaml["levels"]
 currency = config_yaml["currency"]
+mailing_message = config_yaml["mailing_message"]
 
 # chat_modes
 with open(config_dir / "chat_modes.yml", 'r', encoding='utf8') as f:

@@ -6,6 +6,7 @@ allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
 enable_message_streaming: true  # if set, messages will be shown to user word-by-word
 max_free_messages: 10
+mailing_message:
 currency: "RUB"
 
 levels:

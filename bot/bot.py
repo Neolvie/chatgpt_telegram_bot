@@ -460,7 +460,7 @@ async def make_migrations_handle(update: Update, context: CallbackContext) -> No
             await convert_to_new_subscriptions_format(user_id['_id'])
             successful = successful + 1
         except Exception as e:
-            errors.append(e)
+            errors.append(str(e))
 
     await update.message.reply_text(f"Users: <b>{len(user_ids)}</b>"
                                     f"\nSuccessfully converted: <b>{successful}</b>"
@@ -472,6 +472,43 @@ async def make_migrations_handle(update: Update, context: CallbackContext) -> No
 
         await update.message.reply_text(f"\nErrors: <b>{errors_text}</b>",
                                         parse_mode=ParseMode.HTML)
+
+
+async def make_mailing_handle(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text(f"Ты уверен, что хочешь отправить рассылку? Текст рассылки:"
+                                    f"\n\n{config.mailing_message}"
+                                    f"\n\nДля отправки нажми /make_mailing_283748283",
+                                    parse_mode=ParseMode.HTML)
+
+
+async def make_mailing_283748283_handle(update: Update, context: CallbackContext) -> None:
+    if config.mailing_message is None or len(config.mailing_message) == 0:
+        return
+
+    chat_ids = list(db.get_all_user_chat_ids())
+
+    successful = 0
+    errors = []
+    text = config.mailing_message
+
+    for chat_id in chat_ids:
+        try:
+            await context.bot.send_message(chat_id['chat_id'], text=text, parse_mode=ParseMode.HTML)
+            successful = successful + 1
+        except Exception as e:
+            errors.append(str(e))
+
+    await update.message.reply_text(f"Users: <b>{len(chat_ids)}</b>"
+                                    f"\nSuccessfully converted: <b>{successful}</b>"
+                                    f"\nErrors count: <b>{len(errors)}</b>",
+                                    parse_mode=ParseMode.HTML)
+
+    if len(errors) > 0:
+        errors_text = '\n'.join(errors)
+
+        await update.message.reply_text(f"\nErrors: <b>{errors_text}</b>",
+                                        parse_mode=ParseMode.HTML)
+
 
 # after (optional) shipping, it's the pre-checkout
 
@@ -589,10 +626,12 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
-
     application.add_handler(CommandHandler("subscribe", subscribe_handle, filters=user_filter))
+
     application.add_handler(CommandHandler("mystats", mystats_handle, filters=user_filter))
     application.add_handler(CommandHandler("make_migrations", make_migrations_handle, filters=user_filter))
+    application.add_handler(CommandHandler("make_mailing", make_mailing_handle, filters=user_filter))
+    application.add_handler(CommandHandler("make_mailing_283748283", make_mailing_283748283_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
