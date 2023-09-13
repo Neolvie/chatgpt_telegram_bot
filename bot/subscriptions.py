@@ -10,7 +10,7 @@ from database import db
 
 
 async def check_user_subscription(update: Update, context: CallbackContext, user: User):
-    await convert_to_new_subscriptions_format(user)
+    await convert_to_new_subscriptions_format(user.id)
 
     subscribe_to = db.get_subscribe_to(user.id)
 
@@ -35,9 +35,7 @@ async def check_user_subscription(update: Update, context: CallbackContext, user
     return True
 
 
-async def convert_to_new_subscriptions_format(user):
-    user_id = user.id
-
+async def convert_to_new_subscriptions_format(user_id: int):
     subscribe_to = db.get_user_attribute(user_id, "subscribe_to")
     current_subscriptions = db.get_user_attribute(user_id, 'subscriptions')
 

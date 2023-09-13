@@ -168,6 +168,9 @@ class Database:
 
         self.set_user_attribute(user_id, "has_reached_limit", 1)
 
+    def get_all_user_ids(self):
+        return self.user_collection.find({}, {"_id": 1})
+
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)
 

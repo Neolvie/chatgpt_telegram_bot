@@ -32,7 +32,7 @@ from telegram.constants import ParseMode
 import config
 import openai_utils
 from database import db
-from subscriptions import check_user_subscription, subscribe_handle, successful_payment_callback, precheckout_callback
+from subscriptions import *
 
 # setup
 logger = logging.getLogger(__name__)
@@ -449,6 +449,30 @@ async def mystats_handle(update: Update, context: CallbackContext) -> None:
                                     parse_mode=ParseMode.HTML)
 
 
+async def make_migrations_handle(update: Update, context: CallbackContext) -> None:
+    user_ids = list(db.get_all_user_ids())
+
+    successful = 0
+    errors = []
+
+    for user_id in user_ids:
+        try:
+            await convert_to_new_subscriptions_format(user_id['_id'])
+            successful = successful + 1
+        except Exception as e:
+            errors.append(e)
+
+    await update.message.reply_text(f"Users: <b>{len(user_ids)}</b>"
+                                    f"\nSuccessfully converted: <b>{successful}</b>"
+                                    f"\nErrors count: <b>{len(errors)}</b>",
+                                    parse_mode=ParseMode.HTML)
+
+    if len(errors) > 0:
+        errors_text = '\n'.join(errors)
+
+        await update.message.reply_text(f"\nErrors: <b>{errors_text}</b>",
+                                        parse_mode=ParseMode.HTML)
+
 # after (optional) shipping, it's the pre-checkout
 
 
@@ -568,6 +592,7 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("subscribe", subscribe_handle, filters=user_filter))
     application.add_handler(CommandHandler("mystats", mystats_handle, filters=user_filter))
+    application.add_handler(CommandHandler("make_migrations", make_migrations_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
