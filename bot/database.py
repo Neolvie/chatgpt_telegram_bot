@@ -189,7 +189,12 @@ class Database:
         if dialog_id is None:
             dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
 
-        self.set_user_attribute(user_id, "messages_count", self.get_user_attribute(user_id, "messages_count") + 1)
+        count = self.get_user_attribute(user_id, "messages_count")
+
+        if count is None:
+            count = 0
+
+        self.set_user_attribute(user_id, "messages_count", count + 1)
 
         self.dialog_collection.update_one(
             {"_id": dialog_id, "user_id": user_id},
