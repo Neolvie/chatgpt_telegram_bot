@@ -13,11 +13,10 @@ async def check_user_subscription(update: Update, context: CallbackContext, user
     await convert_to_new_subscriptions_format(user.id)
 
     subscribe_to = db.get_subscribe_to(user.id)
+    messages_count = db.get_user_attribute(user.id, 'messages_count')
 
     # Тестовый режим
-    if subscribe_to is None:
-        messages_count = db.get_user_attribute(user.id, 'messages_count')
-
+    if subscribe_to is None or messages_count is None:
         if messages_count is None:
             db.set_user_attribute(user.id, 'messages_count', 0)
             db.set_user_attribute(user.id, 'has_reached_limit', 0)
@@ -27,6 +26,9 @@ async def check_user_subscription(update: Update, context: CallbackContext, user
             db.set_user_reached_limit(user.id)
             return False
 
+        return True
+
+    if messages_count <= config.max_free_messages:
         return True
 
     if (datetime.now() - subscribe_to).days > 0:
