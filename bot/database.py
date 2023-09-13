@@ -117,7 +117,9 @@ class Database:
         return self.user_collection.count_documents({})
 
     def get_subscription_count(self):
-        return self.user_collection.count_documents({"payment_date": {"$exists": True, "$ne": None}})
+        return list(self.user_collection.aggregate([
+            {"$unwind": "$subscriptions"}, {"$group": {"_id": '', "count": {"$sum": 1}}}
+        ]))[0]['count']
 
     def get_subscribe_to(self, user_id: int):
         current_model = self.get_user_attribute(user_id, 'current_model')
