@@ -70,7 +70,7 @@ async def subscribe_handle(update: Update, context: CallbackContext) -> None:
     subscription = await check_user_subscription(update, context, update.message.from_user)
     current_subscription = db.get_current_subscription(user_id)
 
-    if subscription:
+    if subscription and current_subscription is not None:
         await update.message.reply_text(f"У вас уже есть действующая подписка до <b>{current_subscription['subscribe_to']:%d.%m.%Y}</b>",
                                         parse_mode=ParseMode.HTML)
 
