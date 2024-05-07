@@ -29,7 +29,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
+                if self.model in {"gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-turbo"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -69,7 +69,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
+                if self.model in {"gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-turbo"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -151,7 +151,7 @@ class ChatGPT:
         if model == "gpt-3.5-turbo":
             tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_name = -1  # if there's a name, the role is omitted
-        elif model == "gpt-4" or model == "gpt-4-1106-preview":
+        elif model == "gpt-4-turbo" or model == "gpt-4" or model == "gpt-4-1106-preview":
             tokens_per_message = 3
             tokens_per_name = 1
         else:

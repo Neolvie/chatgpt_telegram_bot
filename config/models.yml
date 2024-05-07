@@ -1,5 +1,5 @@
 # available_text_models: ["gpt-3.5-turbo", "gpt-4", "text-davinci-003"]
-available_text_models: ["gpt-3.5-turbo", "gpt-4-1106-preview"]
+available_text_models: ["gpt-3.5-turbo", "gpt-4-turbo"]
 
 info:
   gpt-3.5-turbo:
@@ -15,7 +15,7 @@ info:
       Быстрая: 5
       Доступная: 5
 
-  gpt-4-1106-preview:
+  gpt-4-turbo:
     type: chat_completion
     name: GPT-4
     description: GPT-4 - <b>самая умная</b> и передовая модель в мире. Однако она работает медленнее и стоит дороже по сравнению с ChatGPT. Лучший выбор для <b>сложных</b> интеллектуальных задач - написание курсовых, дипломных работ и т.д.
