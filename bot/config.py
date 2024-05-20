@@ -19,6 +19,7 @@ payment_provider_token = config_yaml["payment_provider_token"]
 use_chatgpt_api = config_yaml.get("use_chatgpt_api", True)
 allowed_telegram_usernames = config_yaml["allowed_telegram_usernames"]
 new_dialog_timeout = config_yaml["new_dialog_timeout"]
+new_dialog_count = config_yaml["new_dialog_count"]
 enable_message_streaming = config_yaml.get("enable_message_streaming", True)
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 levels = config_yaml["levels"]
