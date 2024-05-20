@@ -7,6 +7,7 @@ import tempfile
 import pydub
 from pathlib import Path
 from datetime import datetime
+import converter
 
 import telegram
 from telegram import (
@@ -450,27 +451,12 @@ async def mystats_handle(update: Update, context: CallbackContext) -> None:
 
 
 async def make_migrations_handle(update: Update, context: CallbackContext) -> None:
-    user_ids = list(db.get_all_user_ids())
-
-    successful = 0
-    errors = []
-
-    for user_id in user_ids:
-        try:
-            await convert_to_new_subscriptions_format(user_id['_id'])
-            successful = successful + 1
-        except Exception as e:
-            errors.append(str(e))
-
-    await update.message.reply_text(f"Users: <b>{len(user_ids)}</b>"
-                                    f"\nSuccessfully converted: <b>{successful}</b>"
-                                    f"\nErrors count: <b>{len(errors)}</b>",
-                                    parse_mode=ParseMode.HTML)
-
-    if len(errors) > 0:
-        errors_text = '\n'.join(errors)
-
-        await update.message.reply_text(f"\nErrors: <b>{errors_text}</b>",
+    try:
+        count = converter.convert()
+        await update.message.reply_text(f"\nConverted: <b>{count}</b>",
+                                        parse_mode=ParseMode.HTML)
+    except Exception as e:
+        await update.message.reply_text(f"\nErrors: <b>{str(e)}</b>",
                                         parse_mode=ParseMode.HTML)
 
 

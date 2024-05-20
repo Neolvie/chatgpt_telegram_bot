@@ -6,22 +6,40 @@ allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
 enable_message_streaming: true  # if set, messages will be shown to user word-by-word
 max_free_messages: 10
-mailing_message:
+mailing_message: |
+  Представляем вашему вниманию новейшую модель GPT-4o от OpenAI! Это самая передовая, интеллектуальная и быстрая модель, которая поможет вам готовиться к экзаменам ещё эффективнее, точнее и быстрее.
+  
+  P.S. Если в ваших настройках уже выбрана модель GPT-4, то вам не нужно предпринимать никаких дополнительных действий – новейшая версия сразу же будет доступна вам!
+
 currency: "RUB"
 
 levels:
+  - id: 0
+    model: 'gpt-3.5-turbo'
+    title: 'Подписка на бота GPT3.5'
+    description: 'Безлимитное общение с ботом на'
+    price: 149
+    subscribe_period: 31 # days
+    subscribe_period_text: "1 месяц"
   - id: 1
     model: 'gpt-3.5-turbo'
     title: 'Подписка на бота GPT3.5'
     description: 'Безлимитное общение с ботом на'
-    price: 199
+    price: 249
     subscribe_period: 92 # days
     subscribe_period_text: "3 месяца"
   - id: 2
-    model: 'gpt-4'
-    title: 'Подписка на бота (GPT3.5 + GPT4)'
-    description: 'Безлимитное общение с ботом GPT3.5 + GPT4 на'
-    price: 899
+    model: 'gpt-4o'
+    title: 'Подписка на бота (GPT3.5 + GPT4o)'
+    description: 'Безлимитное общение с ботом GPT3.5 + GPT4o на'
+    price: 399
+    subscribe_period: 31 # days
+    subscribe_period_text: "1 месяц"
+  - id: 3
+    model: 'gpt-4o'
+    title: 'Подписка на бота (GPT3.5 + GPT4o)'
+    description: 'Безлимитное общение с ботом GPT3.5 + GPT4o на'
+    price: 1099
     subscribe_period: 92 # days
     subscribe_period_text: "3 месяца"
 
